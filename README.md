@@ -1,10 +1,4 @@
-Here you go 👇
 
----
-
-## 1️⃣ Full `README.md` (copy-paste as is)
-
-````markdown
 # 🎬 Movie Review API – ALX Backend Capstone
 
 This is a **Movie Review REST API** built with **Django** and **Django REST Framework** as part of the **ALX Backend with Python and Django Capstone Project**.
@@ -51,7 +45,7 @@ This repository is part of the **ALX BE Capstone Part 3 – Start Building** mil
 
 ## 📂 Project Structure
 
-```text
+
 movie-review-api/
 ├─ manage.py
 ├─ README.md
@@ -70,9 +64,8 @@ movie-review-api/
    ├─ models.py
    ├─ tests.py
    └─ views.py
-````
 
----
+
 
 ## 🗄 Models (Django ORM)
 
