@@ -46,6 +46,7 @@ This repository is part of the **ALX BE Capstone Part 3 – Start Building** mil
 ## 📂 Project Structure
 
 
+```text
 movie-review-api/
 ├─ manage.py
 ├─ README.md
@@ -64,7 +65,7 @@ movie-review-api/
    ├─ models.py
    ├─ tests.py
    └─ views.py
-
+````
 
 
 ## 🗄 Models (Django ORM)
