@@ -3,3 +3,16 @@ djangorestframework>=3.16.0
 djangorestframework-simplejwt>=5.5.0
 PyJWT>=2.10.0
 
+# Production server
+gunicorn>=21.2.0
+
+# PostgreSQL support
+psycopg2-binary>=2.9.9
+
+# Database URL parser
+dj-database-url>=2.1.0
+
+# Static files serving
+whitenoise>=6.6.0
+
+
