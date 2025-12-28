@@ -55,6 +55,8 @@ movie-review-api/
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
+├── archive/
+│   └── ml-100k/            # MovieLens dataset for seeding
 ├── movie_review_api/
 │   ├── __init__.py
 │   ├── settings.py          # Django settings with JWT config
@@ -71,6 +73,16 @@ movie-review-api/
     ├── urls.py              # API URL routing
     ├── permissions.py       # Custom permissions
     ├── exceptions.py        # Custom exception handler
+    ├── frontend_views.py    # Frontend template views
+    ├── frontend_urls.py     # Frontend URL routing
+    ├── management/
+    │   └── commands/
+    │       └── seed_data.py # Database seeding command
+    ├── templates/
+    │   └── reviews/         # HTML templates
+    ├── static/
+    │   └── reviews/
+    │       └── css/         # CSS styles
     ├── migrations/
     └── tests.py
 ```
