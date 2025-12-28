@@ -1,0 +1,111 @@
+{% extends 'reviews/base.html' %}
+
+{% block title %}All Reviews - Movie Review API{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">All Reviews</h2>
+        <div style="display: flex; gap: 1rem;">
+            <input type="text" id="movieTitleFilter" placeholder="Filter by movie title..." style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 5px; width: 250px;">
+            <select id="ratingFilter" style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 5px;">
+                <option value="">All Ratings</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+            </select>
+        </div>
+    </div>
+    
+    <div id="reviewsContainer">
+        <div class="loading">Loading reviews...</div>
+    </div>
+    
+    <div id="pagination" style="text-align: center; margin-top: 2rem;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentPage = 1;
+    let movieTitleFilter = '';
+    let ratingFilter = '';
+    
+    async function loadReviews(page = 1) {
+        const container = document.getElementById('reviewsContainer');
+        container.innerHTML = '<div class="loading">Loading reviews...</div>';
+        
+        try {
+            let url = `/reviews/?page=${page}`;
+            if (movieTitleFilter) {
+                url += `&movie_title=${encodeURIComponent(movieTitleFilter)}`;
+            }
+            if (ratingFilter) {
+                url += `&rating=${ratingFilter}`;
+            }
+            
+            const result = await apiCall(url);
+            
+            if (result.results && result.results.length > 0) {
+                container.innerHTML = result.results.map(review => {
+                    const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                    return `
+                        <div class="card review-card">
+                            <div class="card-header">
+                                <h3 class="card-title">${review.movie_title}</h3>
+                                <div class="review-rating">
+                                    <span class="stars">${stars}</span>
+                                    <strong>${review.rating}/5</strong>
+                                </div>
+                            </div>
+                            <div class="review-content">${review.content}</div>
+                            <div class="review-meta">
+                                <span>By ${review.user}</span>
+                                <span>${new Date(review.created_at).toLocaleDateString()}</span>
+                                <a href="/movies/${review.movie_id}/" class="btn btn-secondary btn-small">View Movie</a>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Pagination
+                const paginationDiv = document.getElementById('pagination');
+                if (result.count > result.results.length) {
+                    let paginationHTML = '';
+                    if (result.previous) {
+                        paginationHTML += `<button onclick="loadReviews(${page - 1})" class="btn btn-secondary btn-small">Previous</button> `;
+                    }
+                    paginationHTML += `<span style="margin: 0 1rem;">Page ${page} of ${Math.ceil(result.count / 10)}</span>`;
+                    if (result.next) {
+                        paginationHTML += ` <button onclick="loadReviews(${page + 1})" class="btn btn-secondary btn-small">Next</button>`;
+                    }
+                    paginationDiv.innerHTML = paginationHTML;
+                } else {
+                    paginationDiv.innerHTML = '';
+                }
+            } else {
+                container.innerHTML = '<div class="empty-state"><h3>No reviews found</h3><p>Try adjusting your filters.</p></div>';
+            }
+        } catch (error) {
+            container.innerHTML = `<div class="alert alert-error">Error loading reviews: ${error.message}</div>`;
+        }
+    }
+    
+    document.getElementById('movieTitleFilter').addEventListener('input', (e) => {
+        movieTitleFilter = e.target.value;
+        currentPage = 1;
+        loadReviews(currentPage);
+    });
+    
+    document.getElementById('ratingFilter').addEventListener('change', (e) => {
+        ratingFilter = e.target.value;
+        currentPage = 1;
+        loadReviews(currentPage);
+    });
+    
+    loadReviews();
+</script>
+{% endblock %}
+

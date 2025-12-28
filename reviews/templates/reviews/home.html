@@ -1,0 +1,76 @@
+{% extends 'reviews/base.html' %}
+
+{% block title %}Home - Movie Review API{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>🎬 Movie Review API</h1>
+    <p>Discover, review, and share your thoughts on your favorite movies</p>
+</div>
+
+<div class="card">
+    <h2>Welcome to Movie Reviews!</h2>
+    <p>This is a full-featured REST API for movie reviews, built with Django and Django REST Framework.</p>
+    
+    <h3 style="margin-top: 2rem;">Key Features:</h3>
+    <ul style="margin-left: 2rem; margin-top: 1rem; line-height: 2;">
+        <li>🔐 User registration and JWT authentication</li>
+        <li>🎬 Browse and search movies</li>
+        <li>⭐ Create and manage movie reviews</li>
+        <li>🔍 Filter reviews by movie title and rating</li>
+        <li>📊 View reviews for specific movies</li>
+        <li>👤 Manage your own reviews (edit/delete)</li>
+    </ul>
+
+    <div style="margin-top: 2rem;">
+        <a href="{% url 'movies_list' %}" class="btn btn-primary">Browse Movies</a>
+        <a href="{% url 'create_review' %}" class="btn btn-success" id="createReviewBtn" style="display: none;">Write a Review</a>
+        <a href="{% url 'register' %}" class="btn btn-primary" id="registerBtn">Get Started</a>
+        <a href="{% url 'login' %}" class="btn btn-secondary" id="loginBtn">Login</a>
+    </div>
+</div>
+
+<div class="grid" style="margin-top: 2rem;">
+    <div class="card">
+        <h3>🎬 Movies</h3>
+        <p>Browse our collection of movies and discover new favorites.</p>
+        <a href="{% url 'movies_list' %}" class="btn btn-primary btn-small">View Movies</a>
+    </div>
+    
+    <div class="card">
+        <h3>⭐ Reviews</h3>
+        <p>Read what others are saying about movies.</p>
+        <a href="{% url 'reviews_list' %}" class="btn btn-primary btn-small">View Reviews</a>
+    </div>
+    
+    <div class="card">
+        <h3>📝 Write Review</h3>
+        <p>Share your thoughts and rate movies you've watched.</p>
+                        <a href="{% url 'create_review' %}" class="btn btn-success btn-small" id="createReviewBtn2" style="display: none;">Create Review</a>
+                        <a href="{% url 'login' %}" class="btn btn-secondary btn-small" id="loginBtn2">Login to Review</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Show/hide buttons based on auth state
+    function updateButtons() {
+        const isAuthenticated = !!localStorage.getItem('authToken');
+        if (isAuthenticated) {
+            document.getElementById('createReviewBtn')?.style.setProperty('display', 'inline-block');
+            document.getElementById('createReviewBtn2')?.style.setProperty('display', 'inline-block');
+            document.getElementById('registerBtn')?.style.setProperty('display', 'none');
+            document.getElementById('loginBtn')?.style.setProperty('display', 'none');
+            document.getElementById('loginBtn2')?.style.setProperty('display', 'none');
+        } else {
+            document.getElementById('createReviewBtn')?.style.setProperty('display', 'none');
+            document.getElementById('createReviewBtn2')?.style.setProperty('display', 'none');
+            document.getElementById('registerBtn')?.style.setProperty('display', 'inline-block');
+            document.getElementById('loginBtn')?.style.setProperty('display', 'inline-block');
+            document.getElementById('loginBtn2')?.style.setProperty('display', 'inline-block');
+        }
+    }
+    updateButtons();
+</script>
+{% endblock %}

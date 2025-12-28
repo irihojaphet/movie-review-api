@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Movie Review API{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'reviews/css/style.css' %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">🎬 Movie Reviews</h1>
+            <div class="nav-links">
+                <a href="{% url 'home' %}">Home</a>
+                <a href="{% url 'movies_list' %}">Movies</a>
+                <a href="{% url 'reviews_list' %}">All Reviews</a>
+                <span id="authLinks">
+                    <a href="{% url 'register' %}">Register</a>
+                    <a href="{% url 'login' %}">Login</a>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div id="api-messages"></div>
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Movie Review API - ALX Capstone Project</p>
+        </div>
+    </footer>
+
+    <script>
+        // Store API token in localStorage
+        const API_BASE_URL = '/api';
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = null;
+        
+        // Update auth state on page load
+        function updateAuthState() {
+            const authLinks = document.getElementById('authLinks');
+            if (authToken) {
+                // Try to get user info if token exists
+                fetch(`${API_BASE_URL}/users/`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                }).then(res => {
+                    if (res.ok) {
+                        authLinks.innerHTML = `
+                            <span class="user-info">Logged in</span>
+                            <a href="{% url 'logout' %}" onclick="handleLogout()">Logout</a>
+                        `;
+                    } else {
+                        // Token invalid, clear it
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('refreshToken');
+                        authToken = null;
+                    }
+                }).catch(() => {
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('refreshToken');
+                    authToken = null;
+                });
+            }
+        }
+        
+        function handleLogout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('refreshToken');
+            authToken = null;
+        }
+        
+        // Helper function to show API messages
+        function showMessage(message, type = 'success') {
+            const messagesDiv = document.getElementById('api-messages');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            messagesDiv.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        // Helper function for API calls
+        async function apiCall(endpoint, method = 'GET', data = null, requiresAuth = false) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            if (requiresAuth) {
+                authToken = localStorage.getItem('authToken');
+                if (!authToken) {
+                    throw new Error('Please login to perform this action.');
+                }
+                options.headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+                let result;
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    // Response might not be JSON
+                    result = { detail: response.statusText };
+                }
+                
+                if (!response.ok) {
+                    if (response.status === 401 && requiresAuth) {
+                        // Token expired, clear it
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('refreshToken');
+                        authToken = null;
+                        updateAuthState();
+                        throw new Error('Session expired. Please login again.');
+                    }
+                    // Handle different error formats
+                    let errorMsg = result.detail || result.error?.message || result.error?.details || result.message;
+                    if (typeof errorMsg === 'object') {
+                        errorMsg = JSON.stringify(errorMsg);
+                    }
+                    if (!errorMsg && result.error) {
+                        errorMsg = JSON.stringify(result.error);
+                    }
+                    throw new Error(errorMsg || `Error: ${response.status} ${response.statusText}`);
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+        
+        // Update auth state on page load
+        updateAuthState();
+    </script>
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>
+

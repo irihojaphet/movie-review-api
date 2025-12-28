@@ -1,0 +1,158 @@
+{% extends 'reviews/base.html' %}
+
+{% block title %}Movie Details - Movie Review API{% endblock %}
+
+{% block content %}
+<div id="movieContainer">
+    <div class="loading">Loading movie details...</div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h2 class="card-title">Reviews</h2>
+        <div>
+            <select id="ratingFilter" style="padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 5px;">
+                <option value="">All Ratings</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+            </select>
+        </div>
+    </div>
+    
+    <div id="reviewsContainer">
+        <div class="loading">Loading reviews...</div>
+    </div>
+    
+    <div id="reviewFormSection" style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #f0f0f0; display: none;">
+        <h3>Write a Review</h3>
+        <form id="reviewForm">
+            <input type="hidden" id="movieId" value="{{ movie_id }}">
+            <div class="form-group">
+                <label>Rating</label>
+                <div class="rating-input">
+                    <input type="number" id="rating" min="1" max="5" value="5" required>
+                    <span class="rating-stars" id="ratingDisplay">★★★★★</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="content">Your Review</label>
+                <textarea id="content" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Review</button>
+        </form>
+    </div>
+    <div id="loginPrompt" style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 5px; text-align: center;">
+        <p>Please <a href="{% url 'login' %}">login</a> to write a review.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const movieId = {{ movie_id }};
+    let ratingFilter = '';
+    
+    async function loadMovie() {
+        try {
+            const movie = await apiCall(`/movies/${movieId}/`);
+            document.getElementById('movieContainer').innerHTML = `
+                <div class="card">
+                    <h1 class="card-title">${movie.title}</h1>
+                    ${movie.genre ? `<p class="movie-genre">${movie.genre}</p>` : ''}
+                    ${movie.release_year ? `<p class="movie-year">Released: ${movie.release_year}</p>` : ''}
+                    ${movie.description ? `<p style="margin-top: 1rem; line-height: 1.8;">${movie.description}</p>` : ''}
+                </div>
+            `;
+        } catch (error) {
+            document.getElementById('movieContainer').innerHTML = `<div class="alert alert-error">Error loading movie: ${error.message}</div>`;
+        }
+    }
+    
+    async function loadReviews() {
+        const container = document.getElementById('reviewsContainer');
+        container.innerHTML = '<div class="loading">Loading reviews...</div>';
+        
+        try {
+            let url = `/movies/${movieId}/reviews/`;
+            if (ratingFilter) {
+                url += `?rating=${ratingFilter}`;
+            }
+            
+            const result = await apiCall(url);
+            
+            if (result.results && result.results.length > 0) {
+                container.innerHTML = result.results.map(review => {
+                    const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                    return `
+                        <div class="card review-card">
+                            <div class="review-rating">
+                                <span class="stars">${stars}</span>
+                                <strong>${review.rating}/5</strong>
+                            </div>
+                            <div class="review-content">${review.content}</div>
+                            <div class="review-meta">
+                                <span>By ${review.user}</span>
+                                <span>${new Date(review.created_at).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                container.innerHTML = '<div class="empty-state"><h3>No reviews yet</h3><p>Be the first to review this movie!</p></div>';
+            }
+        } catch (error) {
+            container.innerHTML = `<div class="alert alert-error">Error loading reviews: ${error.message}</div>`;
+        }
+    }
+    
+    document.getElementById('ratingFilter').addEventListener('change', (e) => {
+        ratingFilter = e.target.value;
+        loadReviews();
+    });
+    
+    document.getElementById('rating').addEventListener('input', (e) => {
+        const rating = parseInt(e.target.value);
+        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        document.getElementById('ratingDisplay').textContent = stars;
+    });
+    
+    document.getElementById('reviewForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            movie_id: parseInt(document.getElementById('movieId').value),
+            rating: parseInt(document.getElementById('rating').value),
+            content: document.getElementById('content').value
+        };
+        
+        try {
+            await apiCall('/reviews/', 'POST', formData, true);
+            showMessage('Review created successfully!', 'success');
+            document.getElementById('content').value = '';
+            loadReviews();
+        } catch (error) {
+            showMessage(error.message || 'Failed to create review.', 'error');
+        }
+    });
+    
+    // Show/hide review form based on auth
+    function updateReviewForm() {
+        const isAuthenticated = !!localStorage.getItem('authToken');
+        if (isAuthenticated) {
+            document.getElementById('reviewFormSection').style.display = 'block';
+            document.getElementById('loginPrompt').style.display = 'none';
+        } else {
+            document.getElementById('reviewFormSection').style.display = 'none';
+            document.getElementById('loginPrompt').style.display = 'block';
+        }
+    }
+    
+    updateReviewForm();
+    loadMovie();
+    loadReviews();
+</script>
+{% endblock %}
+

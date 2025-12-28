@@ -1,0 +1,93 @@
+{% extends 'reviews/base.html' %}
+
+{% block title %}Create Review - Movie Review API{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h2 class="card-title">Write a Review</h2>
+    
+    <form id="reviewForm">
+        <div class="form-group">
+            <label for="movieSelect">Select Movie</label>
+            <select id="movieSelect" required>
+                <option value="">Loading movies...</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Rating</label>
+            <div class="rating-input">
+                <input type="number" id="rating" min="1" max="5" value="5" required>
+                <span class="rating-stars" id="ratingDisplay">★★★★★</span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="content">Your Review</label>
+            <textarea id="content" required placeholder="Share your thoughts about this movie..."></textarea>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Review</button>
+    </form>
+    
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="{% url 'movies_list' %}" class="btn btn-secondary">Browse Movies</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadMovies() {
+        try {
+            const result = await apiCall('/movies/');
+            const select = document.getElementById('movieSelect');
+            if (result.results && result.results.length > 0) {
+                select.innerHTML = '<option value="">Select a movie...</option>' + 
+                    result.results.map(movie => 
+                        `<option value="${movie.id}">${movie.title}${movie.release_year ? ` (${movie.release_year})` : ''}</option>`
+                    ).join('');
+            } else {
+                select.innerHTML = '<option value="">No movies available</option>';
+            }
+        } catch (error) {
+            document.getElementById('movieSelect').innerHTML = '<option value="">Error loading movies</option>';
+        }
+    }
+    
+    document.getElementById('rating').addEventListener('input', (e) => {
+        const rating = parseInt(e.target.value);
+        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        document.getElementById('ratingDisplay').textContent = stars;
+    });
+    
+    document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const movieId = parseInt(document.getElementById('movieSelect').value);
+        if (!movieId) {
+            showMessage('Please select a movie', 'error');
+            return;
+        }
+        
+        const formData = {
+            movie_id: movieId,
+            rating: parseInt(document.getElementById('rating').value),
+            content: document.getElementById('content').value
+        };
+        
+        try {
+            await apiCall('/reviews/', 'POST', formData, true);
+            showMessage('Review created successfully!', 'success');
+            setTimeout(() => {
+                window.location.href = `/movies/${movieId}/`;
+            }, 1500);
+        } catch (error) {
+            showMessage(error.message || 'Failed to create review.', 'error');
+        }
+    });
+    
+    loadMovies();
+</script>
+{% endblock %}
+
